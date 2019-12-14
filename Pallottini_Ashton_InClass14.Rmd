@@ -1,0 +1,60 @@
+---
+title: "In Class 10"
+author: "Ashton Pallottini"
+date: "11/25/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(195021)
+n=100
+mu=4
+v=2
+y=rnorm(n,mean=mu,sd=sqrt(v))
+  
+isCensored=runif(n)<.2
+  
+yCen=y
+yCen[isCensored]=y[isCensored]+runif(min=-1,max=-.02,n=sum(isCensored)) 
+head(cbind(isCensored,y,yCen),20)
+```
+
+```{r}
+plot(yCen~y);abline(a=0,b=1,col=2,lwd=2)
+abline(v=mean(y),col=4,lwd=2)
+abline(h=mean(yCen),col=4,lwd=2)
+  
+mean(yCen)
+var(yCen)
+```
+
+
+```{r}
+M <- rep(NA, 1000)
+V <- rep(NA, 1000)
+yComplete <- yCen
+M[1] <- mean(yCen)
+V[1] <- var(yCen)
+
+for(i in 1:10000){
+  #M Step
+  M[i] <- mean(yComplete)
+  V[i] <- var(yComplete)
+  
+  #E Step
+  yComplete[isCensored] <-  M[i] + sqrt(V[i])*dnorm((yCen[isCensored] - M[i])/V[i])/pnorm((yCen[isCensored] - M[i])/V[i], lower.tail = FALSE)
+
+}
+```
+
+```{r}
+head(cbind(isCensored,y,yCen, yComplete),20)
+
+M[10000]
+V[10000]
+```
+

@@ -1,0 +1,74 @@
+---
+title: "In Class 8"
+author: "Ashton Pallottini"
+date: "11/18/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+## Reading the data set
+DATA=read.table('goutData.txt',header=T,stringsAsFactors=F)
+DATA$gout <- ifelse(DATA$gout == "N", 0, 1)
+DATA$sex <- ifelse(DATA$sex == "F", 0, 1)
+DATA$race <- ifelse(DATA$race == "W", 0, 1)
+
+## model
+
+model='gout~sex+race+age'  
+fm0=glm(model,data=DATA, family = "binomial")
+summary(fm0)
+# Pediction equation
+race.test <- c(0, 1, 0, 1)
+sex.test <- c(0, 0, 1, 1)
+age.test <- rep(55, 4)
+Z=cbind(1, race = race.test, sex = sex.test, age = age.test) 
+head(Z)
+yHat=Z%*%coef(fm0)
+yHat <- exp(yHat)
+yHat <- yHat/(1+yHat)
+
+
+summary(fm0)$coefficients
+```
+
+```{r}
+n <- nrow(DATA)
+yhats <- matrix(nrow = 5000, ncol = 4)
+probs <- yhats
+coefs <- yhats
+mf.odds <- rep(NA, 5000)
+bw.odds <- rep(NA, 5000)
+
+for(i in 1:5000){
+  tmp <- sample(1:n, size = n, replace = TRUE)
+  tmpDATA <- DATA[tmp,]
+  fm <- glm(gout~sex+race+age,data=tmpDATA,family='binomial')
+  yHat.tmp <- Z%*%coef(fm)
+  yhats[i,] <- yHat.tmp
+  coefs[i,] <- coef(fm)
+  probs[i,] <- exp(yHat.tmp)/(1 + exp(yHat.tmp))
+  mf.odds[i] <- exp(summary(fm)$coefficients[2,1])
+  bw.odds[i] <- exp(summary(fm)$coefficients[3,1])
+}
+
+mf.ci <- c(quantile(mf.odds, p= .025), quantile(mf.odds, p= .975))
+mf.ci #CI for male-female odds ratio
+bw.ci <- c(quantile(bw.odds, p =.025), quantile(bw.odds, p= .975))
+bw.ci #CI for black-white odds ratio
+
+probs.ci <- cbind(lower = apply(probs, MARGIN = 2, quantile, p = 0.025), upper = apply(probs, MARGIN = 2, quantile, p = 0.975))
+probs.ci #Confidence interval on probabilities for WF55, BF55, WM55, BM55
+```
+
+```{r}
+#The results are similar
+apply(coefs, MARGIN = 2, mean)
+summary(fm0)$coefficients
+```
+

@@ -1,0 +1,69 @@
+---
+title: "In Class 9"
+author: "Ashton Pallottini"
+date: "11/20/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+wages.data <- read.table("wages.txt", header = TRUE)
+
+formula1 <- "Wage~Sex+Education+Experience"
+formula2 <- "Wage~."
+
+model1 <- lm(formula1, data = wages.data)
+model2 <- lm(formula2, data = wages.data)
+
+aic <- AIC(model1, model2)
+aic
+bic <- BIC(model1, model2)
+bic
+r2.1 <- summary(model1)$r.squared
+r2.1
+adjr2.1 <- summary(model1)$adj.r.squared
+adjr2.1
+r2.2 <- summary(model2)$r.squared
+r2.2
+adjr2.2 <- summary(model2)$adj.r.squared
+adjr2.2
+f.test <- anova(model1, model2)
+f.test$`Pr(>F)`[2] #P value from F test
+
+n <- nrow(wages.data)
+nTesting <- 150
+reps <- 1000
+test.r2 <- rep(NA, reps)
+
+for(i in 1:reps){
+  indexes <- sample(1:n, nTesting)
+  train <- wages.data[-indexes,]
+  test <- wages.data[indexes,]
+  
+  fm1 <- lm(formula1, data = train)
+  fm2 <- lm(formula2, data = train)
+  
+  yhat1 <- predict(fm1, newdata = test)
+  yhat2 <- predict(fm2, newdata = test)
+  
+  prss1 <- sum((test$Wage - yhat1)^2)
+  prss2 <- sum((test$Wage - yhat2)^2)
+  
+  test.r2[i] <- (prss2 - prss1)/prss1
+}
+pred.r2 <- mean(test.r2)
+
+report.mat <- matrix(nrow = 5, ncol = 2)
+colnames(report.mat) <- c("Model 1", "Model 2")
+rownames(report.mat) <- c("AIC", "BIC", "R-SQ", "Adj R-SQ", "Pred R-SQ")
+report.mat[,1] <- c(aic[1,2], bic[1,2], r2.1, adjr2.1, NA)
+report.mat[,2] <- c(aic[2,2], bic[2,2], r2.2, adjr2.2, pred.r2)
+
+report.mat
+```
+
+The models are very close in terms of which I would choose. Model 1 has the better BIC and Prediction R-squared. However, Model 2 has the better AIC, Training R-Squared, and Adjusted Training R-Squared. Since Model 2 is better at more criteria, I choose Model 2.
+

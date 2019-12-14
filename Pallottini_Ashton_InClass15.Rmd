@@ -1,0 +1,176 @@
+---
+title: "In Class 10"
+author: "Ashton Pallottini"
+date: "12/2/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+fitMixture=function(y,nComp,nIter=100){ 
+ n=length(y)
+ PROBS=matrix(nrow=n,ncol=nComp,0)
+ 
+ # assigning observations to groups based on quantiles
+ tmp=quantile(y,c(0,1:nComp/nComp))
+ z=as.integer(cut(y,breaks=tmp))
+ for(i in 1:n){
+  PROBS[i,z[i]]=1
+ }  
+   
+ mu=rep(NA,nComp)
+ SD=rep(NA,nComp)
+ alpha=rep(NA,nComp)
+ 
+ ## Iterations
+ for( i in 1:nIter){
+	# M-step maximizes a weighted log-likelihood 
+	K=sum(PROBS)
+	for(j in 1:nComp){
+		Nj=sum(PROBS[,j])		
+		mu[j]=sum(y*PROBS[,j])/Nj		
+		eHat=(y-mu[j])*sqrt(PROBS[,j])		
+		vHat=sum(eHat^2)/Nj
+		SD[j]=sqrt(vHat)
+		alpha[j]=sum(PROBS[,j])/K
+	}
+
+	# E-step finds the probability that each observation belongs to each group	
+	for(j in 1:nComp){
+		PROBS[,j]=dnorm(y,mean=mu[j],sd=SD[j])*alpha[j]
+	}
+	# normalization 
+	tmp=rowSums(PROBS)
+	for(j in 1:nComp){
+		PROBS[,j]=PROBS[,j]/tmp
+	}		   
+ }
+ ANS=list(MEANS=mu,SD=SD,alpha=alpha,PROBS=PROBS)
+ return(ANS)
+}
+ 
+```
+
+```{r}
+dat <- read.table("wages.txt", header = TRUE)
+
+y <- dat$Wage
+twocomp <- fitMixture(y = dat$Wage, nComp = 2)
+threecomp <- fitMixture(y = dat$Wage, nComp = 3)
+fivecomp <- fitMixture(y = dat$Wage, nComp = 5)
+```
+
+```{r}
+ mixtureDensity=function(x,mu,sd,prob){
+   n=length(x)
+   f=rep(0,n)
+   nComp=length(mu)
+   for(i in 1:nComp){
+     f=f+prob[i]*dnorm(x,mean=mu[i],sd=sd[i]) 
+    }
+   return(f)
+ }
+
+ # plots
+ x=seq(from=min(y),to=max(y),length=1000)
+# f_true=mixtureDensity(x,mu=mu0,sd=sd0,prob=prob0) # the true density
+ f_ML=mixtureDensity(x,mu=twocomp$MEANS,sd=twocomp$SD,prob=twocomp$alpha) # the density evaluated at the ML estimates of the parameters
+ plot(f_ML~x,col=2,type='l', ylim = c(0, .25), main = "Blue: Two, Red: Three, Black: Five, Nonpar Density:Green", xlim = c(0,25))
+ lines(x=x,y=f_ML,col=4,lty=1, lwd = 2)
+ 
+ f_ML3=mixtureDensity(x,mu=threecomp$MEANS,sd=threecomp$SD,prob=threecomp$alpha)
+ f_ML5=mixtureDensity(x,mu=fivecomp$MEANS,sd=fivecomp$SD,prob=fivecomp$alpha)
+ lines(x=x,y=f_ML3,col="red",lty=1, lwd = 2)
+ lines(x=x,y=f_ML5,col="black",lty=1, lwd = 2)
+ 
+ den <- density(dat$Wage)
+ lines(x = den$x, y = den$y, lwd = 2, col = "green")
+```
+
+```{r}
+#Two comp
+choice2 <- apply(FUN=which.max,X=twocomp$PROBS,MARGIN=1)
+dat$choice2 <- choice2
+dat2.1 <- dat[dat$choice2 == 1,]
+dat2.2 <- dat[dat$choice2 == 2,]
+
+##Group 1
+paste("Two comp, group 1")
+mean(dat2.1$Education)
+1 - mean(dat2.1$Sex)
+1 - mean(dat2.1$Black)
+
+##Group 2
+paste("Two comp, group 2")
+mean(dat2.2$Education)
+1 - mean(dat2.2$Sex)
+1 - mean(dat2.2$Black)
+
+#Three comp
+choice3 <- apply(FUN=which.max,X=threecomp$PROBS,MARGIN=1)
+dat$choice3 <- choice3
+dat3.1 <- dat[dat$choice3 == 1,]
+dat3.2 <- dat[dat$choice3 == 2,]
+dat3.3 <- dat[dat$choice3 == 3,]
+
+##Group 1
+paste("Three comp, group 1")
+mean(dat3.1$Education)
+1 - mean(dat3.1$Sex)
+1 - mean(dat3.1$Black)
+
+##Group 2
+paste("Three comp, group 2")
+mean(dat3.2$Education)
+1 - mean(dat3.2$Sex)
+1 - mean(dat3.2$Black)
+
+##Group 3
+paste("Three comp, group 3")
+mean(dat3.3$Education)
+1 - mean(dat3.3$Sex)
+1 - mean(dat3.3$Black)
+
+#Five comp
+choice5 <- apply(FUN=which.max,X=fivecomp$PROBS,MARGIN=1)
+dat$choice5 <- choice5
+dat5.1 <- dat[dat$choice5 == 1,]
+dat5.2 <- dat[dat$choice5 == 2,]
+dat5.3 <- dat[dat$choice5 == 3,]
+dat5.4 <- dat[dat$choice5 == 4,]
+dat5.5 <- dat[dat$choice5 == 5,]
+
+##Group 1
+paste("Five comp, group 1")
+mean(dat5.1$Education)
+1 - mean(dat5.1$Sex)
+1 - mean(dat5.1$Black)
+
+##Group 2
+paste("Five comp, group 2")
+mean(dat5.2$Education)
+1 - mean(dat5.2$Sex)
+1 - mean(dat5.2$Black)
+
+##Group 3
+paste("Five comp, group 3")
+mean(dat5.3$Education)
+1 - mean(dat5.3$Sex)
+1 - mean(dat5.3$Black)
+
+##Group 4
+paste("Five comp, group 4")
+mean(dat5.4$Education)
+1 - mean(dat5.4$Sex)
+1 - mean(dat5.4$Black)
+
+##Group 5
+paste("Five comp, group 5")
+mean(dat5.5$Education)
+1 - mean(dat5.5$Sex)
+1 - mean(dat5.5$Black)
+```
+

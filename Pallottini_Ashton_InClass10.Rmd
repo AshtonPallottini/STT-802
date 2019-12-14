@@ -1,0 +1,40 @@
+---
+title: "In Class 6"
+author: "Ashton Pallottini"
+date: "11/11/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+DATA=read.table("goutData.txt",header=T)
+
+DATA$gout=ifelse(DATA$gout=='Y',1,0)
+
+#fitting the model without doing any permutation
+fm0=glm(gout~su+race+sex+age,data=DATA, family = "binomial")
+summary(fm0)
+#str(summary(fm0))
+```
+
+```{r}
+race.p <- summary(fm0)$coefficients[3,4]
+race.t <- summary(fm0)$coefficients[3,3]
+TMP <- DATA
+n <- nrow(DATA)
+
+t.stats <- rep(NA,10000)
+for(i in 1:10000){
+  TMP$race <- sample(DATA$race, n)
+  fm <- lm(gout~su+race+sex+age, data = TMP)
+  t.stats[i] <- summary(fm)$coefficients[3,3]
+}
+
+est.p <- mean(abs(t.stats) > abs(race.t))
+est.p
+race.p
+```
+

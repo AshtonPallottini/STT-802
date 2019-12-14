@@ -1,0 +1,70 @@
+---
+title: "In Class 3"
+author: "Ashton Pallottini"
+date: "10/28/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+table <- matrix(nrow = 5, ncol = 5)
+
+R2=c(0,.01,.03,.05,.1) # Model R-sq.
+N=c(10,20,30,50,100) # sample size
+nRep=1000 # number of Monte Carlo replicates
+for(k in 1:5){
+  for(j in 1:5){
+    countRejections=rep(0, 1) # We count rejections for every scenario
+    b=sqrt(R2[j])
+    pValues=rep(NA,nRep)
+    
+    for(i in 1:nRep){
+      x=rnorm(N[k])
+      signal=x*b # var(xb)=var(x)*var(b)=var(x)b^2=R2
+      error=rnorm(sd=sqrt(1-R2),n=N[k]) 
+      y=signal+error
+      fm=lsfit(y=y,x=x) # equivalent to lm (i.e., fits model via OLS) but faster
+      pValues[i]=ls.print(fm,print.it = FALSE)$coef[[1]][2,4]
+    }
+    
+    reject=pValues<.05 # decision rule
+    table[j,k] <- mean(reject) # since we are simulating under Ha this estimates power
+  }
+}
+```
+
+```{r}
+colnames(table) <- c("N=10", "N=20", "N=30", "N=50", "N=100")
+rownames(table) <- c("R2=0", "R2=.01", "R2=.03", "R2=.05", "R2=.10")
+table
+```
+
+```{r}
+df <- as.data.frame(matrix(nrow = 25, ncol = 3))
+df[,1] <- c(table[,1], table[,2], table[,3], table[,4], table[,5])
+df[,2] <- c(rep(10,5), rep(20,5), rep(30,5), rep(40,5), rep(50,5))
+df[,3] <- rep(c(0,.01,.03,.05,.1),5)
+colnames(df) <- c("RejRate", "N", "R2")
+
+plot(x = df$R2[1:5], y = df$RejRate[1:5], ylim = c(0,1), xlab = "R2", ylab = "Rejection Rate", main = "Rejection Rates by N and R2", xlim = c(0,.12))
+lines(x = df$R2[1:5], y = df$RejRate[1:5])
+lines(x = df$R2[6:10], y = df$RejRate[6:10])
+lines(x = df$R2[11:15], y = df$RejRate[11:15])
+lines(x = df$R2[16:20], y = df$RejRate[16:20])
+lines(x = df$R2[21:25], y = df$RejRate[21:25])
+text(.11, .10, "N=10")
+text(.11, .25, "N=20")
+text(.11, .40, "N=30")
+text(.11, .60, "N=50")
+text(.11, .85, "N=100")
+```
+
+The estimated type 1 error rates are when we reject Ho when Ho is true. Here Ho is that Beta = 0. Clearly then, we should not reject when R2 = 0, since that implies that Beta = 0. As such, our rejection rates for R2 = 0 are our type 1 error rates. There are printed below, in order of size of N.
+
+```{r}
+table[1,]
+```
+

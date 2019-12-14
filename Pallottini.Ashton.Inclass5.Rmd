@@ -1,0 +1,80 @@
+---
+title: "In Class 5"
+author: "Ashton Pallottini"
+date: "10/20/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Composition Sampling
+
+```{r}
+cond.y.probs <- c(.5, .75)
+X <- rep(NA, 10000)
+Y <- rep(NA, 10000)
+
+for(i in 1:10000){
+  X[i] <- sample(c(0,1), 1, prob = c(0.2, 0.8))
+  if(X[i] == 1){
+    Y[i] <- sample(c(0,1), 1, prob = c(1-cond.y.probs[2], cond.y.probs[2]))
+  } else{
+    Y[i] <- sample(c(0,1), 1, prob = c(1-cond.y.probs[1], cond.y.probs[1]))
+  }
+}
+```
+
+```{r}
+mean(X)
+mean(Y)
+mean((X==0) & (Y==0))
+mean((X==0) & (Y==1))
+mean((X==1) & (Y==0))
+mean((X==1) & (Y==1))
+```
+
+###Gibbs Sampler
+
+```{r}
+cond.probs <- matrix(nrow = 2, ncol = 2)
+cond.probs[1,1] <- .5
+cond.probs[1,2] <- .75
+cond.probs[2,1] <- 2/3
+cond.probs[2,2] <- 6/7
+
+X <- rep(NA, 10000)
+Y <- rep(NA, 10000)
+
+X[1] <- sample(c(0,1), 1, prob = c(0.2, 0.8))
+if(X[1] == 0){
+  Y[1] <- sample(c(0,1), 1, prob = c(1-cond.probs[1,1],cond.probs[1,1]))
+} else{
+  Y[1] <- sample(c(0,1), 1, prob = c(1-cond.probs[1,2],cond.probs[1,2]))
+}
+
+for(i in 2:10000){
+  if(Y[i-1] == 0){
+    X[i] <- sample(c(0,1), 1, prob = c(1-cond.probs[2,1],cond.probs[2,1]))
+  } else{
+    X[i] <- sample(c(0,1), 1, prob = c(1-cond.probs[2,2],cond.probs[2,2]))
+  }
+  
+  if(X[i-1] == 0){
+    Y[i] <- sample(c(0,1), 1, prob = c(1-cond.probs[1,1],cond.probs[1,1]))
+  } else{
+    Y[i] <- sample(c(0,1), 1, prob = c(1-cond.probs[1,2],cond.probs[1,2]))
+  }
+}
+```
+
+```{r}
+mean(X)
+mean(Y)
+mean((X==0) & (Y==0))
+mean((X==0) & (Y==1))
+mean((X==1) & (Y==0))
+mean((X==1) & (Y==1))
+```
+

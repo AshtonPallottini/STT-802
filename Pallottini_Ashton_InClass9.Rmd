@@ -1,0 +1,83 @@
+---
+title: "In Class 5"
+author: "Ashton Pallottini"
+date: "11/4/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+getData=function(n,p,R2=.5,nHA=10){ 
+  HA=rep(FALSE,p)
+  HA[sample(1:p,size=nHA)]=TRUE
+  
+  effects=rnorm(.3,sd=.2,n=nHA)
+  X=matrix(nrow=n,ncol=p,rnorm(n*p))
+  
+  signal=X[,HA]%*%effects
+  
+  error=rnorm(sd=sqrt(var(signal)*(1-R2)/R2),n=n)
+  y=signal+error
+  DATA=list(y=y,signal=signal,error=error,X=X,HA=HA)
+  return(DATA)
+}
+```
+
+```{r}
+set.seed(12)
+DATA=getData(n=300,p=500,R2=.5)
+
+pvals <- rep(0,500)
+for(i in 1:500){
+  my.lm <- lm(DATA$y~DATA$X[,i])
+  pvals[i] <- summary(my.lm)$coefficients[2,4]
+}
+```
+
+```{r}
+adj.pvals <- p.adjust(pvals, method = "fdr")
+rejs <- (adj.pvals<.10)
+sum(rejs) #Number of rejections
+```
+
+```{r}
+true.rejs <- (DATA$HA[rejs == TRUE] == rejs[rejs == TRUE])
+1 - sum(true.rejs)/length(true.rejs) #FDR
+```
+
+Now we put it in a loop
+
+```{r}
+rule1 <- rep(0,100)
+rule2 <- rep(0,100)
+
+for(j in 1:100){
+  DATA=getData(n=300,p=500,R2=.5)
+
+  pvals <- rep(0,500)
+  for(i in 1:500){
+    my.lm <- lm(DATA$y~DATA$X[,i])
+    pvals[i] <- summary(my.lm)$coefficients[2,4]
+  }
+  
+  rejs.1 <- (pvals < 0.10)
+  false.disc.1 <- (DATA$HA[rejs.1 == TRUE] == rejs.1[rejs.1 == TRUE])
+  fdr.rule1 <- 1 - sum(false.disc.1)/length(false.disc.1)
+  rule1[j] <- fdr.rule1
+  
+  adj.pvals <- p.adjust(pvals, method = "fdr")
+  rejs.2 <- (adj.pvals<.10)
+  false.disc.2 <- (DATA$HA[rejs.2 == TRUE] == rejs.2[rejs.2 == TRUE])
+  fdr.rule2 <- 1 - sum(false.disc.2)/length(false.disc.2)
+  rule2[j] <- fdr.rule2
+}
+```
+
+```{r}
+mean(rule1) #FDR for p values
+mean(rule2) #FDR for FDR-adjusted p values
+```
+
