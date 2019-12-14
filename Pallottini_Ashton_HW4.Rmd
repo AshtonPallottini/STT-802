@@ -1,0 +1,161 @@
+---
+title: "HW4_Power"
+author: "Ashton Pallottini"
+date: "11/4/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Number 1
+
+####Number 1.1
+```{r}
+N <- c(30, 50, 100, 200, 500, 1000, 3000)
+b2 <- c(0, 0.2, 0.3, 0.5)
+p.vals <- c(0)
+
+for(j in 1:5000){
+  for(k in 1:length(N)){
+    data.mat <- matrix(nrow = N[k], ncol = 4)
+    bmi.m <- rnorm(n = N[k]/2, mean = 26.5, sd = sqrt(30))
+    bmi.f <- rnorm(n = N[k]/2, mean = 27.4, sd = sqrt(16.7))
+    
+    data.mat[,1] <- c(rep(0, N[k]/2), rep(1, N[k]/2))
+    data.mat[,2] <- c(bmi.m, bmi.f)
+    mean.bmi <- mean(data.mat[,2])
+    data.mat[,3] <- data.mat[,2] - mean.bmi
+    colnames(data.mat) <- c("Sex", "BMI", "Centered.BMI", "SBP")
+    data.mat <- as.data.frame(data.mat)
+    
+    for(l in 1:length(b2)){
+      SBP <- 120 + (-3)*data.mat[,1] + b2[l]*data.mat[,3] + rnorm(n = N[k], mean = 0, sd = sqrt(300))
+      data.mat[,4] <- SBP
+      my.reg <- lm(SBP~Sex+Centered.BMI, data = data.mat)
+      p.val <- summary(my.reg)$coefficients[3,4]
+      p.vals <- c(p.vals, p.val)
+    }
+  }
+}
+p.vals <- p.vals[-1]
+```
+
+```{r}
+pval.mat <- matrix(nrow = 140000, ncol = 3)
+pval.mat[,1] <- p.vals
+pval.mat[,2] <- rep(c(rep(30,4),rep(50,4),rep(100,4),rep(200,4),rep(500,4),rep(1000,4),rep(3000,4)),5000)
+pval.mat[,3] <- rep(c(0,0.2,0.3,0.5),35000)
+colnames(pval.mat) <- c("p.vals","N", "b2")
+reject <- (pval.mat[,1]<0.05)
+pval.mat <- as.data.frame(pval.mat)
+pval.mat$reject <- reject
+power.mat <- table(pval.mat$b2, pval.mat$N, pval.mat$reject)
+power.mat <- power.mat[1:4, 1:7, 2]/5000
+power.mat
+
+powers <- as.data.frame(matrix(nrow = 28, ncol = 3))
+powers[,1] <- c(power.mat[1,],power.mat[2,],power.mat[3,],power.mat[4,])
+powers[,2] <- c(rep(0,7),rep(.2,7),rep(.3,7),rep(.5,7))
+powers[,3] <- rep(c(30,50,100,200,500,1000,3000), 4)
+
+plot(x = powers[1:7,3], y = powers[1:7,1], ylim = c(0,1), main = "Power by N and b2", xlab = "N", ylab = "Power", xlim = c(0, 3500))
+lines(x = powers[1:7,3], y = powers[1:7,1])
+lines(x = powers[8:14,3], y = powers[8:14,1])
+lines(x = powers[15:21,3], y = powers[15:21,1])
+lines(x = powers[22:28,3], y = powers[22:28,1])
+text("b2 = 0", x = 3200, y = 0.05)
+text("b2 = 0.2", x = 3200, y = 0.86)
+text("b2 = 0.3", x = 3200, y = 0.95)
+text("b2 = 0.5", x = 3200, y = 1)
+```
+
+####Number 1.2
+
+```{r}
+N <- c(900,950,1000,1050,1100,1150,1200,1250,1300)
+b2 <- 0.3
+p.vals <- c(0)
+
+for(j in 1:5000){
+  for(k in 1:length(N)){
+    data.mat <- matrix(nrow = N[k], ncol = 4)
+    bmi.m <- rnorm(n = N[k]/2, mean = 26.5, sd = sqrt(30))
+    bmi.f <- rnorm(n = N[k]/2, mean = 27.4, sd = sqrt(16.7))
+    
+    data.mat[,1] <- c(rep(0, N[k]/2), rep(1, N[k]/2))
+    data.mat[,2] <- c(bmi.m, bmi.f)
+    mean.bmi <- mean(data.mat[,2])
+    data.mat[,3] <- data.mat[,2] - mean.bmi
+    colnames(data.mat) <- c("Sex", "BMI", "Centered.BMI", "SBP")
+    data.mat <- as.data.frame(data.mat)
+    
+    SBP <- 120 + (-3)*data.mat[,1] + b2*data.mat[,3] + rnorm(n = N[k], mean = 0, sd = sqrt(300))
+    data.mat[,4] <- SBP
+    my.reg <- lm(SBP~Sex+Centered.BMI, data = data.mat)
+    p.val <- summary(my.reg)$coefficients[3,4]
+    p.vals <- c(p.vals, p.val)
+  }
+}
+p.vals <- p.vals[-1]
+```
+
+```{r}
+pval.mat <- matrix(nrow = 45000, ncol = 2)
+pval.mat[,1] <- p.vals
+pval.mat[,2] <- rep(N,5000)
+colnames(pval.mat) <- c("p.vals","N")
+reject <- (pval.mat[,1]<0.05)
+pval.mat <- as.data.frame(pval.mat)
+pval.mat$reject <- reject
+power.mat <- table(pval.mat$N, pval.mat$reject)
+power.mat <- power.mat[1:8, 2]/5000
+power.mat
+```
+The sample size must be at least somewhere from 1100 to 1150 to achieve a power of 0.8
+
+###Number 2
+
+```{r}
+N <- c(30, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000)
+p.vals <- c(0)
+
+for(j in 1:5000){
+  for(k in 1:length(N)){
+    data.mat <- matrix(nrow = N[k], ncol = 4)
+    bmi.m <- rnorm(n = N[k]/2, mean = 26.5, sd = sqrt(30))
+    bmi.f <- rnorm(n = N[k]/2, mean = 27.4, sd = sqrt(16.7))
+    
+    data.mat[,1] <- c(rep(0, N[k]/2), rep(1, N[k]/2))
+    data.mat[,2] <- c(bmi.f, bmi.m)
+    mean.bmi <- mean(data.mat[,2])
+    data.mat[,3] <- data.mat[,2] - mean.bmi
+    colnames(data.mat) <- c("Sex", "BMI", "Centered.BMI", "SBP")
+    data.mat <- as.data.frame(data.mat)
+    
+    SBP <- 120 + (-3)*data.mat[,1] + 0.2*data.mat[,3] + 0.2*data.mat[,1]*data.mat[,3] + rnorm(n = N[k], mean = 0, sd = sqrt(300))
+    data.mat[,4] <- SBP
+    my.reg <- lm(SBP~Sex*Centered.BMI, data = data.mat)
+    p.val <- summary(my.reg)$coefficients[4,4]
+    p.vals <- c(p.vals, p.val)
+  }
+}
+p.vals <- p.vals[-1]
+```
+
+```{r}
+pval.mat <- matrix(nrow = 75000, ncol = 2)
+pval.mat[,1] <- p.vals
+pval.mat[,2] <- rep(N,5000)
+colnames(pval.mat) <- c("p.vals","N")
+
+reject <- (pval.mat[,1]<0.05)
+pval.mat <- as.data.frame(pval.mat)
+pval.mat$reject <- reject
+power.mat <- table(pval.mat$N, pval.mat$reject)
+power.mat <- power.mat[1:15, 2]/5000
+power.mat
+```
+
+The power reaches 0.5 somewhere between a sample size of 5000 and 6000, so power of 0.5 can be achieved ar sample sizes below 10000.

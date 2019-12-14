@@ -1,0 +1,183 @@
+---
+title: "HW5"
+author: "Ashton Pallottini"
+date: "11/27/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Question 1
+
+```{r}
+DATA <- read.table('goutData.txt', header = TRUE)
+DATA$gout <- ifelse(DATA$gout=='Y', 1, 0)
+
+fm <- glm(gout~su, family='binomial', data=DATA)
+
+summary(fm)
+```
+
+####Part 1
+
+```{r}
+SU <- seq(from = 3, to = 12, by = .1)
+gout.pred <- predict(fm, newdata = data.frame(su = SU), type = "response")
+plot(x = SU, y = gout.pred, ylab = "P(Gout)")
+```
+
+####Part 2
+
+```{r}
+iter <- 1000
+n <- nrow(DATA)
+i <- 1
+preds.mat <- matrix(nrow = length(SU), ncol = iter)
+
+while(i <= iter){
+  rows <- sample(1:n, n, replace = TRUE)
+  tmp <- DATA[rows,]
+  if(sum(tmp$gout == 1) >= 5){
+    fm.tmp <- glm(gout~su, family='binomial', data=tmp)
+    preds.mat[,i] <- predict(fm.tmp, newdata = data.frame(su = SU), type = "response")
+    i <- i + 1
+  }
+}
+
+lowers <- apply(preds.mat, 1, quantile, .025)
+uppers <- apply(preds.mat, 1, quantile, .975)
+
+plot(x = SU, y = gout.pred, ylab = "P(Gout)", pch = 19, col = "white")
+lines(x = SU, y = gout.pred, lty = 1)
+lines(x = SU, y = lowers, lty = 2)
+lines(x = SU, y = uppers, lty = 2)
+```
+
+###Question 2
+
+```{r}
+x<-c(0.634,-0.2119,0.5573,-0.1496,0.9057,-1.1871,0.6196,1.0978,1.2734,3.6887,0.7271,1.0695,0.0092,2.7288,2.2511,
+       -0.4604,2.2568,0.6934,1.4057,0.6835,0.022,0.779,3.6794,0.0549,0.4713,-0.1583,1.7813,
+       1.021,2.2305,2.3341,0.2757,0.1429,0.945,-0.5404,0.8633,1.5886,1.1324,-0.0488,1.0846,
+       -0.0329,0.0914,1.7145,1.0102,0.212,0.2591,0.163,2.9892,0.1436,1.4092,2.5441,1.9485,
+       1.7708,-0.1758,-0.4029,0.7764,0.6944,2.384,0.8131,0.8842,-0.0683,0.2312,1.0394,
+       2.8581,0.5689,0.4849,2.0361,3.5297,0.5002,0.8305,1.4896,0.0651,-0.4312,0.5889,0.5881,-0.08,
+       1.9153,1.6418,0.375,-0.3963,1.2148,0.9178,0.5538,0.742,-0.298,0.8876,
+       0.267,0.3064,1.0215,0.2846,0.8067,0.1886,0.674,0.0438,0.6449,0.7669,
+       0.5705,0.1712,0.291,1.0395,-0.3946)
+  
+ y<-c(0.99,-1.414,-0.175,-1.2016,-0.5451,-2.4346,0.8572,2.1505,1.0321,-0.5873,1.0554,-1.472,-0.4566,-0.3953,-0.5922,
+      -1.2084,-0.6361,0.6896,-0.6128,-0.4068,-0.6627,-1.379,2.2171,-0.2956,0.7176,-0.5751,-0.2126,1.0235,
+      0.1804,0.8917,0.2317,-0.9527,-0.4074,-1.5784,1.5088,1.9565,0.624,-1.1149,0.3273,-0.6217,-1.2779,-0.3181,0.373,0.1012,
+      0.1076,-0.2733,2.3347,0.0482,-1.8307,0.8342,-0.5809,0.8359,-0.4145,-1.3119,-0.3743,0.5917,0.6753,1.5999,0.4179,
+      -0.8108,0.0278,0.576,1.8718,-0.5622,0.5405,-0.3566,0.7039,0.9494,-0.9232,0.8041,-0.3757,-1.1262,-0.0313,0.8664,
+      -0.7742,0.181,-0.6513,-0.6487,-1.0154,-0.9262,-0.1505,-0.1987,0.4892,-2.3308,0.5141,-0.2912,-0.0993,1.7827,
+      -0.6219,1.5431,0.2213,0.8707,-1.2091,-0.0553,-0.9392,1.037,-0.5226,0.014,-0.5306,-1.6497)
+```
+
+```{r}
+set.seed(123)
+iter <- 10000
+corr.stats <- rep(NA, iter)
+
+for(i in 1:iter){
+  y.tmp <- sample(y, length(y), replace = FALSE)
+  corr.stats[i] <- abs(cor(x, y.tmp))
+}
+
+mean(corr.stats > .1)
+```
+
+Under permutation, the null hypothesis of Ho: p = 0 is true. A Type 1 error is rejecting Ho and choosing Ha: p != 0 when in fact Ho is true. Our rejection rule is to reject Ho when the absolute value of the correlation exceeds 0.1. Thus, the probability of committing a Type 1 error is estimated by the proportion of permuted samples in which the absolute value of the correlation between x and permuted y is greater than 0.1. Thus, the estimated probability of Type 1 error is about 0.3218.
+
+###Question 3
+
+```{r}
+### Simulation
+set.seed(195021)
+n <- 10000
+mu <- 2
+v <- 1
+y <- rnorm(n,mean=mu,sd=sqrt(v))
+  
+threshold <- 2.2 # fixed point used for censoring
+isCensored <- y>threshold
+  
+yCen <- y
+yCen[isCensored] <- threshold
+ 
+head(data.frame(isCensored,y,yCen),20)
+plot(yCen~y,col=ifelse(isCensored,'pink','skyblue'));abline(a=0,b=1,col=2,lwd=2)
+abline(v=mean(y),col=4,lwd=2)
+abline(h=mean(yCen),col=4,lwd=2)
+ 
+# Computing just the mean and the variance of the censored data
+# which contains both time to events and time to censoring
+# leads to biased estimates
+```
+
+####Part 1
+
+```{r}
+part.3.1 <- matrix(nrow = 2, ncol = 3)
+rownames(part.3.1) <- c("Mean", "Variance")
+colnames(part.3.1) <- c("True", "Uncensored", "Censored")
+
+part.3.1[,1] <- c(2,1)
+part.3.1[,2] <- c(mean(y), var(y))
+part.3.1[,3] <- c(mean(yCen), var(yCen))
+
+part.3.1
+```
+
+####Part 2
+
+No. The sample mean from the censored data is a biased estimator for the true population mean. Due to the right censor, the expected value of each censored observation is not the population mean, but is in fact below the population mean. Since each observation does not have an expectation equal to the population mean, the sample mean is biased downwards from the population mean.
+
+####Part 3
+
+```{r}
+M <- rep(NA, 1000)
+V <- rep(NA, 1000)
+iter <- 1000
+yComplete <- yCen
+
+meanTN <- function(mu,SD,a,b){
+  alpha <- (a-mu)/SD
+  beta <- (b-mu)/SD
+  K <- pnorm(beta)-pnorm(alpha)
+  mean <- mu-SD*(dnorm(beta)-dnorm(alpha))/K
+  return(mean)
+}
+
+
+for(i in 1:iter){
+  #M Step
+  M[i] <- mean(yComplete)
+  V[i] <- var(yComplete)
+  
+  #E Step
+  yComplete[isCensored] <- meanTN(M[i], sqrt(V[i]), threshold, Inf)
+}
+
+plot(x = 1:1000, y = M, xlab = "Iteration", ylab = "Mean", main = "EM Estimated Mean", col = "white")
+lines(x = 1:1000, y = M)
+plot(x = 1:1000, y = V, xlab = "Iteration", ylab = "Variance", main = "EM Estimated Variance", col = "white")
+lines(x = 1:1000, y = V)
+```
+
+####Part 4
+
+```{r}
+part.3.4 <- part.3.1
+colnames(part.3.4) <- c("True", "Estimated", "EM")
+part.3.4[,2] <- c(M[1], V[1])
+part.3.4[,3] <- c(M[1000], V[1000])
+
+part.3.4
+
+#head(data.frame(isCensored,y,yCen, yComplete),20)
+```
+

@@ -1,0 +1,120 @@
+---
+title: "HW1"
+author: "Ashton Pallottini"
+date: "10/26/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Number 1
+
+```{r}
+n <- 50000
+U <- runif(n)
+gamma.rv <- qgamma(p = U, rate = 2, shape = 2)
+gamma.rv.quants <- quantile(gamma.rv, probs = (1:9)/10)
+
+hist(gamma.rv, main = "Histogram of Simulated Gamma RV", xlab = "Gamma RV")
+abline(v = qgamma((1:9)/10, rate = 2, shape = 2), col = "blue")
+abline(v = gamma.rv.quants, col = "red")
+```
+
+###Number 2
+
+####2.1
+
+```{r}
+Y <- rep(NA, 50000)
+X <- rep(NA, 50000)
+
+for(i in 1:50000){
+  X[i] <- rchisq(1, df = 4)
+  Y[i] <- rnorm(1, mean = 0, sd = sqrt(1/X[i]))
+}
+```
+
+####2.2
+
+```{r}
+my.dens <- density(Y)
+norm.dens <- density(rnorm(50000, sd = sd(Y)))
+plot(my.dens, xlim = c(-5,5), main = "Normal Distribution (red) Vs. Simulated t Distribution (black)", xlab = "X")
+lines(norm.dens, col = "red")
+```
+
+The simulated t distribution has a much higher peak than does the normal distribution.The t distribution also falls below the normal distribution not very far from 0, but has tails that are slightly thicker.
+
+####2.3
+
+```{r}
+Y <- rep(NA, 50000)
+X <- rep(NA, 50000)
+
+for(i in 1:50000){
+  X[i] <- rchisq(1, df = 100)
+  Y[i] <- rnorm(1, mean = 0, sd = sqrt(1/X[i]))
+}
+```
+
+```{r}
+my.dens <- density(Y)
+norm.dens <- density(rnorm(50000, sd = sd(Y)))
+plot(my.dens, main = "Normal Distribution (red) Vs. Simulated t Distribution (black)", xlab = "X")
+lines(norm.dens, col = "red")
+```
+
+With df = 4, there were large differences between the two graphs. Here with df = 100, we see that there is practically no difference between the two graphs.
+
+###Number 3
+
+####3.1
+
+```{r}
+mus <- c(1,2,0)
+sigma <- matrix(c(1,.2,.3,.2,1.2,.1,.3,.1,2), nrow = 3, ncol = 3)
+
+vX2.gX1 <- 1.2*(1 - (.2/sqrt(1.2))^2)
+vX3.gX1X2 <- 2*(1 - (.1/sqrt(2.4))^2)*(1 - (.3/sqrt(2))^2)
+```
+
+We have that E(X2|X1=x1) = E(X2) + SD(X2)(p)[(x1 - E(X1))/SD(X1)] = 2 + sqrt(1.2)(.2/sqrt(1x1.2))[(x1-1)/1] = 2 + 0.2(x1 - 1).
+Also, V(X2|X1=x1) = V(X2)(1 - p^2) = 1.2(1 - (.2/sqrt(1x1.2))^2) =  1.16.
+Next, E(X3|X1=x1,X2=x2) = E(XX) + SD(X3)(p[X1,X3])[(x1 - E(X1))/SD(X1)] + SD(X3)(p[X2,X3])[(x2 - E(X2))/SD(X2)] = 0 + sqrt(2)(.3/sqrt(1x2))[(x1-1)/1] + sqrt(2)(.1/sqrt(1.2x2))[(x2-2)/1.2] = 0.3(x1 - 1) + (.1/1.2)(x2-2)
+Lastly, V(X3|X1=x1,X2=x2) = V(X3)(1 - p[x2,x3]^2)(1 - p[x1,x3]^2) = 2(1 - (.1/sqrt(2x1.2))^2)(1 - .3/sqrt(1x2))^2 = 1.902
+
+####3.2
+
+```{r}
+X1 <- rep(NA,30000)
+X2 <- rep(NA,30000)
+X3 <- rep(NA,30000)
+
+set.seed(53)
+for(i in 1:30000){
+  X1[i] <- rnorm(1, mean = 1, sd = 1)
+  X2[i] <- rnorm(1, mean = (2 + .2*(X1[i] - 1)), sd = sqrt(vX2.gX1))
+  X3[i] <- rnorm(1, mean = (.3*(X1[i] - 1) + (.1/1.2)*(X2[i] - 2)), sd = sqrt(vX3.gX1X2))
+}
+  
+means.sampled <- c(mean(X1), mean(X2), mean(X3))
+means.sampled
+mus
+  
+sigma.sampled <- matrix(nrow = 3, ncol = 3)
+sigma.sampled[1,1] <- var(X1)
+sigma.sampled[2,2] <- var(X2)
+sigma.sampled[3,3] <- var(X3)
+sigma.sampled[1,2] <- cov(X1,X2)
+sigma.sampled[2,1] <- sigma.sampled[1,2]
+sigma.sampled[1,3] <- cov(X1,X3)
+sigma.sampled[3,1] <- sigma.sampled[1,3]
+sigma.sampled[2,3] <- cov(X2,X3)
+sigma.sampled[3,2] <- cov(X3,X2)
+sigma.sampled
+sigma
+```
+
+The simulated means are all within 0.2 of the target means. The simulated variances are all within 0.11 of the target variances. The simulated covariances are all within .32 of the target covariances. Overall, it is very close.
