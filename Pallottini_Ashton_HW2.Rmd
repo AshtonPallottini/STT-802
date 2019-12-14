@@ -1,0 +1,250 @@
+---
+title: "HW2"
+author: "Ashton Pallottini"
+date: "10/2/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+```
+
+
+###Number 1
+
+```{r}
+weibull.gen <- function(lambda, v, beta, z){
+  N <- length(z)
+  U <- runif(N, 0, 1)
+  gen.vars <- (-log(U)/(lambda*exp(z*beta)))^(1/v)
+  return(gen.vars)
+}
+```
+
+```{r}
+Beta <- c(1,2)
+Z1 <- sample(x=c(0,1), size=50, replace=TRUE, prob=c(0.5,0.5))
+Z2 <- sample(x=c(0,1), size=50, replace=TRUE, prob=c(0.5,0.5))
+Z <- c(Z1,Z2)
+
+#Part i
+part.1 <- weibull.gen(lambda = 1, v = 0.5, beta = Beta, z = Z)
+summary(part.1)
+hist(part.1, main = "Part 1 Weibull Generation", xlab = "X")
+
+#Part ii
+part.2 <- weibull.gen(lambda = 1, v = 5, beta = Beta, z = Z)
+summary(part.2)
+hist(part.2, main = "Part 2 Weibull Generation", xlab = "X")
+```
+
+####Since h(x) = lambda*v*x^(v-1), we integrate h(x) with respect to x to yield H(x) = lambda*x^v. By definition, H(H-inverse(x)) = x, which implies that lambda*H-inverse(x)^v = x, so H-inverse(x) = (x/lambda)^(1/v). Thus by the Cox model: X = H-inverse(-ln(U)/exp(Z'Beta)), where U~uniform(0,1). So, X = [-ln(U)/(lambda*exp{Z`Beta})]^(1/v).
+
+###Number 2
+
+```{r}
+gompertz.gen <- function(lambda, alpha, beta, z){
+  N <- length(z)
+  U <- runif(N, 0, 1)
+  gen.vars <- (log(-alpha*log(U)/exp(z*beta)) - log(lambda))/alpha
+  return(gen.vars)
+}
+```
+
+```{r}
+Beta <- c(1,2)
+Z1 <- sample(x=c(0,1), size=50, replace=TRUE, prob=c(0.5,0.5))
+Z2 <- runif(50, 0, 3)
+Z <- c(Z1, Z2)
+
+our.gen <- gompertz.gen(lambda = 1, alpha = 5, beta = Beta, z = Z)
+summary(our.gen)
+hist(our.gen, main = "Gompertz Generation", xlab = "X")
+```
+
+####Since h(x) = lambda*exp(alpha*x), we integrate h(x) with respect to x to yield H(x) = (lambda/alpha)*(exp(alpha*x)-1). By definition, H(H-inverse(x)) = x, which implies that (lambda/alpha)[exp{alpha*H-inverse(x)}-1] = x, so H-inverse(x) = [ln(alpha*x)-ln(lambda)]/alpha. Thus by the Cox model: X = H-inverse(-ln(U)/exp(Z'Beta)), where U~uniform(0,1). So, X = [ln(-alpha*ln(U)/exp{z*Beta})-ln(lambda)]/alpha.
+
+###Number 3
+
+```{r}
+our.ranks <- as.data.frame(matrix(nrow = 100, ncol = 1000))
+```
+
+
+```{r}
+set.seed(12345)
+
+p <- 1000
+Sigma <- matrix(nrow = p, ncol = p)
+  
+
+for(i in 1:p){
+  for(k in 1:p){
+    if(i != k){
+      Sigma[i,k] <- .5^abs(i-k)
+    }
+    else{
+      Sigma[i,k] <- 1
+    }
+  }
+}
+
+for(j in 1:100){
+  n <- 400
+  rho <- .5
+  
+  e <- rnorm(n, 0, 1)
+
+  
+  X <- mvrnorm(n = n, mu = rep(0,1000), Sigma = Sigma)
+  
+  Y <- 3*X[,1] + 3*X[,2] + 3*X[,3] + 3*X[,4] + e
+  
+  our.coef <- rep(0,1000)
+  for(i in 1:p){
+    reg.i <- lm(Y~X[,i])
+    coef.i <- reg.i$coefficients[2]
+    our.coef[i] <- abs(coef.i)
+  }
+  our.ranks[j,] <- rank(-our.coef)
+}
+```
+
+
+```{r}
+PIT <- rep(0, 100)
+our.ranks <- 1*(our.ranks < (400/log(400)))
+for(i in 1:100){
+  if(sum(our.ranks[i,1:4]) == 4){
+    PIT[i] <- 1
+  }
+}
+mean(PIT)
+```
+
+All four of the coefficients were chosen in 100% of our models
+
+###Number 4
+
+```{r}
+our.ranks <- as.data.frame(matrix(nrow = 100, ncol = 1000))
+```
+
+
+```{r}
+set.seed(12345)
+
+p <- 1000
+Sigma <- matrix(nrow = p, ncol = p)
+  
+
+for(i in 1:p){
+  for(k in 1:p){
+    if(i != k){
+      Sigma[i,k] <- .5
+    }
+    else{
+      Sigma[i,k] <- 1
+    }
+  }
+}
+
+for(j in 1:100){
+  n <- 400
+  rho <- .5
+  
+  e <- rnorm(n, 0, 1)
+
+  
+  X <- mvrnorm(n = n, mu = rep(0,1000), Sigma = Sigma)
+  
+  Y <- 3*X[,1] + 3*X[,2] + 3*X[,3] + 3*X[,4] + 3*X[,5] - 7.5*X[,6] + e
+  
+  our.coef <- rep(0,1000)
+  for(i in 1:p){
+    reg.i <- lm(Y~X[,i])
+    coef.i <- reg.i$coefficients[2]
+    our.coef[i] <- abs(coef.i)
+  }
+  our.ranks[j,] <- rank(-our.coef)
+}
+```
+
+
+```{r}
+PIT <- rep(0, 100)
+our.ranks <- 1*(our.ranks < (400/log(400)))
+for(i in 1:100){
+  if(sum(our.ranks[i,1:6]) == 6){
+    PIT[i] <- 1
+  }
+}
+mean(PIT)
+```
+
+All 6 of our coefficients were chosen in 0% of our models.
+
+###Number 5
+
+
+```{r}
+our.ranks <- as.data.frame(matrix(nrow = 100, ncol = 1000))
+```
+
+
+```{r}
+set.seed(12345)
+
+p <- 1000
+Sigma <- matrix(nrow = p, ncol = p)
+  
+
+for(i in 1:p){
+  for(k in 1:p){
+    if(i != k){
+      Sigma[i,k] <- .5
+    }
+    else{
+      Sigma[i,k] <- 1
+    }
+  }
+}
+
+for(j in 1:100){
+  n <- 400
+  rho <- .5
+  
+  e <- rnorm(n, 0, 1)
+
+  
+  X <- mvrnorm(n = n, mu = rep(0,1000), Sigma = Sigma)
+  
+  Y <- 3*X[,1] + 3*X[,2] + 3*X[,3] + 3*X[,4] + 3*X[,5] - 7.5*X[,6] + e
+  
+  our.coef <- c(NA,rep(0,999))
+  for(i in 2:p){
+    reg.i <- lm(Y~X[,i]+X[,1])
+    coef.i <- reg.i$coefficients[2]
+    our.coef[i] <- abs(coef.i)
+  }
+  our.ranks[j,] <- rank(-our.coef)
+}
+```
+
+
+```{r}
+PIT <- rep(0, 100)
+our.ranks[,2:1000] <- 1*(our.ranks[,2:1000] < (400/log(400)))
+for(i in 1:100){
+  if(sum(our.ranks[i,2:6]) == 5){
+    PIT[i] <- 1
+  }
+}
+mean(PIT)
+```
+
+All five of the coefficients were chosen in 100% of the models.

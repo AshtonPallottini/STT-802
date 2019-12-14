@@ -1,0 +1,122 @@
+---
+title: "HW1"
+author: "Ashton Pallottini"
+date: "9/22/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Number 1
+
+```{r}
+Fibonacci <- function(n){
+  count <- 3
+  one <- 0
+  two <- 1
+  numbers <- rep(0,n)
+  
+  if(n == 2){
+    numbers <- c(one,two)
+  }
+  else if(n>2){
+    while(count <= n){
+      numbers[1:2] <- c(one,two)
+      numbers[count] <- numbers[count-1]+numbers[count-2]
+      count <- count + 1
+    }
+  }
+  return(numbers)
+}
+```
+
+```{r}
+Fibonacci(6)
+```
+
+###Number 2
+
+```{r}
+set.seed(12345)
+price <- 20
+days <- 0
+
+while(price<=25){
+  fluctuation <- runif(1, -5, 5)
+  price <- price + fluctuation
+  days <- days + 1
+}
+
+days
+```
+
+###Number 3
+
+```{r}
+crab <- read.table("crab.txt")
+colnames(crab)=c("id","C","S","W","Wt","Sa")
+
+set.seed(12345)
+
+split.data <- function(dat, p){
+  p <- p/100
+  train.size <- round(p*nrow(dat))
+  
+  train.nos <- sample(1:nrow(dat), train.size)
+  train <- dat[train.nos,]
+  test <- dat[-train.nos,]
+  
+  return(list(train,test))
+}
+```
+
+```{r}
+data.list <- split.data(dat=crab, p=60)
+train <- data.list[[1]]
+test <- data.list[[2]]
+
+#Table of training set colors
+table(train$C)
+
+#Table of test set colors
+table(test$C)
+```
+
+
+###Number 4
+
+```{r}
+NegLogLik <- function(X,y,b){
+  if(length(unique(y)) > 2){
+    lambda <- exp(X%*%b)
+    LogLik = sum((-1)*lambda + y*log(lambda) + log(factorial(y)))
+    return(-LogLik)
+  }
+  else{
+    eta = X%*%b
+    p = exp(eta)/(1+exp(eta))
+    LogLik=sum(ifelse(y==1,log(p),log(1-p)))
+    return(-LogLik)
+  }
+}
+```
+
+```{r}
+C=crab[,2]
+S=crab[,3]
+W=crab[,4]
+Wt=crab[,5]
+Sa=crab[,6]
+
+b.ini=c(0,0)
+X=cbind(1,W)
+y=Sa
+
+optim(fn=NegLogLik, X=X, y=y, par=b.ini) 
+
+
+model=glm(Sa~W,family=poisson(link=log))
+summary(model)$coefficients
+```
