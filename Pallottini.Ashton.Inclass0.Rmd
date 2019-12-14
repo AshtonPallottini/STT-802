@@ -1,0 +1,79 @@
+---
+title: "In Class 0"
+author: "Ashton Pallottini"
+date: "September 4, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Question 1
+
+```{r}
+readmission.df = data.frame( name = c("P0001", "P0002", "P0003", "P0004"), sex = c("f", "f", "m", "m"), days = c(102,302,31,9)) 
+readmission.df
+
+readmission.df$male.30 <- ifelse((readmission.df$sex == "m") & (readmission.df$days < 30), "T", "F")
+readmission.df
+```
+
+###Question 2
+
+```{r}
+z <- 0
+while(z <= 20){
+  if(z != 5 & z != 10){
+    print(z)
+    z <- z + 1
+  }
+  else{
+    z <- z+1
+  }
+}
+```
+
+###Question 3
+
+```{r}
+recid <- read.csv("recid.csv", header = TRUE)
+head(recid)
+
+recid$married2 <- ifelse(recid$married == 1, "Yes", "No")
+head(recid)
+```
+
+```{r}
+#Number of IDs = Number of data points
+total.ids <- length(recid$id)
+total.ids
+
+#Five Number Summary and Mean
+summary(recid$week)
+
+#Totals and proportions
+table(recid$arrest)
+table(recid$arrest)/total.ids
+
+#Totals and proportions
+table(recid$financial)
+table(recid$financial)/total.ids
+
+#Five Number Summary and Mean
+summary(recid$age)
+
+#Totals and proportions
+table(recid$married)
+table(recid$married)/total.ids
+
+#Totals and proportions
+table(recid$paroled)
+table(recid$paroled)/total.ids
+
+#Totals 
+table(recid$married2)
+```
+
+
+

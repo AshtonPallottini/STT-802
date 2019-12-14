@@ -1,0 +1,84 @@
+---
+title: "In Class 2"
+author: "Ashton Pallottini"
+date: "9/18/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Number 1
+
+```{r}
+NegLoglik=function(X,y,b){
+  eta = X%*%b
+  p = exp(eta)/(1+exp(eta))
+  LogLik=sum(ifelse(y==1,log(p),log(1-p)))
+  return(-LogLik)
+}
+```
+
+###Number 2
+
+```{r}
+donner=read.table("donner.txt") ## choose donner.txt
+survive=donner[,3]
+age=donner[,1]
+sex=donner[,2]
+colnames(donner)=c("age","sex","survive")
+head(donner)
+
+b.ini=c(0,0,0)
+X=cbind(1,age,sex)
+y=survive
+
+optim(fn=NegLoglik, X=X, y=y, par=b.ini)  #By default `optim` searches for parameters, which minimize the function `fn`.
+
+
+model=glm(survive~age+sex, data=donner, family=binomial("logit"))
+summary(model)$coefficients
+```
+
+###Number 3
+
+```{r}
+NegLoglik.3 <- function(X,y,b){
+  if(length(unique(y)) > 2){
+    lambda <- exp(X%*%b)
+    LogLik = sum((-1)*lambda + y*log(lambda) + log(factorial(y)))
+    return(-LogLik)
+  }
+  else{
+    eta = X%*%b
+    p = exp(eta)/(1+exp(eta))
+    LogLik=sum(ifelse(y==1,log(p),log(1-p)))
+    return(-LogLik)
+  }
+}
+```
+
+###Number 4
+
+```{r}
+crab <- read.table("crab.txt")
+C=crab[,2]
+S=crab[,3]
+W=crab[,4]
+Wt=crab[,5]
+Sa=crab[,6]
+colnames(crab)=c("id","C","S","W","Wt","Sa")
+
+b.ini=c(0,0)
+X=cbind(1,W)
+y=Sa
+
+optim(fn=NegLoglik.3, X=X, y=y, par=b.ini)  #By default `optim` searches for parameters, which minimize the function `fn`.
+
+
+model=glm(Sa~W,family=poisson(link=log))
+summary(model)$coefficients
+```
+
+

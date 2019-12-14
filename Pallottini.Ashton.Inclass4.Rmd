@@ -1,0 +1,28 @@
+---
+title: "In Class 4"
+author: "Ashton Pallottini"
+date: "10/2/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+time.to.event <- function(N, lambda, beta){
+  U <- runif(N, 0, 1)
+  z <- sample(x=c(0,1), size=N, replace=TRUE, prob=c(0.5,0.5))
+  
+  xgen <- -log(U)/(lambda*exp(z*beta))
+  return(xgen)
+}
+```
+
+```{r}
+set.seed(12345)
+times <- time.to.event(N = 100, lambda = 1, beta = 1)
+summary(times)
+hist(times, main = "Simulated Cox Time to Event from Exponential Distribution", xlab = "Time to Event")
+```
+

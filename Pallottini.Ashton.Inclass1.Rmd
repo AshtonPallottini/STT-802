@@ -1,0 +1,59 @@
+---
+title: 'In Class #1'
+author: "Ashton Pallottini"
+date: "9/11/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Tabula Rasa
+rm(list=ls())
+
+#Create Function
+LM <- function(X,y){
+        #Convert to Matrices
+        X <- as.matrix(cbind(1,X))
+        y <- as.matrix(y)
+        
+        #Solve for Beta and Residuals
+        beta <- solve(t(X)%*%X)%*%t(X)%*%y
+        res <- as.matrix(y-X%*%beta)
+        
+        #Sample Size and Number of covariates
+        n <- nrow(X)
+        p <- ncol(X)
+        
+        #Variance-Covariance matrix
+        VCV <- 1/(n-p) * as.numeric(t(res)%*%res) * solve(t(X)%*%X)
+        
+        #Standard Errors of estimates
+        se <- sqrt(diag(VCV))
+        
+        #T values of estimates
+        t <- beta/se
+        
+        #P values of estimates
+        p_value <- rbind(2*pt(abs(t[1]), df=n-p, lower.tail= FALSE), 2*pt(abs(t[2]), df=n-p, lower.tail= FALSE))
+        
+        #Put together and print relevant output
+        output <- as.data.frame(cbind(beta,se,t,p_value))
+        names(output) <- c("Estimate", "Std. Error", "t", "p-values")
+        output
+}
+```
+
+```{r}
+#Set seed and create data
+set.seed(12345)
+x <- rnorm(100,120,sd = 10)
+y <- 60+1.04*x+rnorm(100,0,1)
+
+#Confirm results are the same
+LM(x,y)
+summary(lm(y~x))
+```
+
